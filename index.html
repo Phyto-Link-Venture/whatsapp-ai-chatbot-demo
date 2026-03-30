@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsApp AI Chatbot Demo — Phyto Link Venture</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0b141a; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        .container { width: 100%; max-width: 420px; height: 90vh; max-height: 700px; display: flex; flex-direction: column; border-radius: 12px; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.3); }
+        .header { background: #1f2c33; padding: 12px 16px; display: flex; align-items: center; gap: 12px; }
+        .header .avatar { width: 40px; height: 40px; border-radius: 50%; background: #00a884; display: flex; align-items: center; justify-content: center; font-size: 20px; color: white; }
+        .header .info h3 { color: #e9edef; font-size: 16px; }
+        .header .info p { color: #8696a0; font-size: 12px; }
+        .chat { flex: 1; overflow-y: auto; padding: 16px; background: #0b141a; }
+        .message { max-width: 85%; margin-bottom: 8px; padding: 8px 12px; border-radius: 8px; font-size: 14px; line-height: 1.5; white-space: pre-wrap; word-wrap: break-word; }
+        .bot { background: #1f2c33; color: #e9edef; border-top-left-radius: 0; margin-right: auto; }
+        .user { background: #005c4b; color: #e9edef; border-top-right-radius: 0; margin-left: auto; }
+        .time { font-size: 11px; color: #8696a0; text-align: right; margin-top: 4px; }
+        .input-area { background: #1f2c33; padding: 10px 16px; display: flex; gap: 8px; }
+        .input-area input { flex: 1; background: #2a3942; border: none; border-radius: 8px; padding: 10px 16px; color: #e9edef; font-size: 14px; outline: none; }
+        .input-area input::placeholder { color: #8696a0; }
+        .input-area button { background: #00a884; border: none; border-radius: 50%; width: 40px; height: 40px; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; color: white; }
+        .input-area button:hover { background: #00c49a; }
+        .badge { background: #00a884; color: white; text-align: center; padding: 8px; font-size: 12px; }
+        .badge a { color: white; text-decoration: none; font-weight: bold; }
+        .typing { color: #8696a0; font-style: italic; font-size: 13px; padding: 4px 12px; margin-bottom: 8px; }
+        .cta-banner { background: linear-gradient(135deg, #00a884, #005c4b); color: white; text-align: center; padding: 12px; font-size: 13px; }
+        .cta-banner a { color: #fff; font-weight: bold; text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="cta-banner">
+            🤖 Want this for YOUR business? <a href="mailto:phytolinkventure@gmail.com?subject=WhatsApp%20AI%20Chatbot%20Inquiry">Get Started — from RM199/month</a>
+        </div>
+        <div class="header">
+            <div class="avatar">🦷</div>
+            <div class="info">
+                <h3>Demo Dental Clinic</h3>
+                <p>🤖 AI Assistant • Always Online</p>
+            </div>
+        </div>
+        <div class="chat" id="chat"></div>
+        <div class="input-area">
+            <input type="text" id="userInput" placeholder="Type a message..." onkeypress="if(event.key==='Enter')sendMessage()">
+            <button onclick="sendMessage()">➤</button>
+        </div>
+        <div class="badge">⚡ Powered by <a href="mailto:phytolinkventure@gmail.com">Phyto Link Venture</a> — AI WhatsApp Automation</div>
+    </div>
+    <script>
+const CLINIC = {
+    name: "Demo Dental Clinic",
+    hours: "Mon-Fri: 9:00 AM - 6:00 PM\nSat: 9:00 AM - 1:00 PM\nSun: Closed",
+    address: "123 Jalan Example, Petaling Jaya, Selangor",
+    phone: "03-1234 5678",
+    whatsapp: "012-345 6789",
+    services: [
+        ["Scaling & Polishing", "RM 80 - 150"],
+        ["Tooth Extraction", "RM 80 - 300"],
+        ["Dental Filling", "RM 80 - 250"],
+        ["Root Canal Treatment", "RM 500 - 1,500"],
+        ["Teeth Whitening", "RM 800 - 1,500"],
+        ["Dental Crown", "RM 800 - 2,000"],
+        ["Braces (Metal)", "RM 3,500 - 6,000"],
+        ["Invisalign", "RM 8,000 - 15,000"],
+        ["Dental Implant", "RM 5,000 - 8,000"],
+    ],
+    dentists: [
+        "Dr. Sarah Tan — General Dentistry",
+        "Dr. Ahmad Razak — Orthodontics",
+        "Dr. Mei Ling — Cosmetic Dentistry",
+    ]
+};
+
+function getSlots() {
+    const slots = [];
+    const d = new Date();
+    for (let i = 1; i <= 7; i++) {
+        const date = new Date(d.getTime() + i * 86400000);
+        const day = date.getDay();
+        const label = date.toLocaleDateString('en-MY', {weekday:'long', day:'numeric', month:'long'});
+        if (day >= 1 && day <= 5) [9,10,11,14,15,16,17].forEach(h => slots.push(`${label} at ${h}:00`));
+        else if (day === 6) [9,10,11,12].forEach(h => slots.push(`${label} at ${h}:00`));
+    }
+    return slots.slice(0, 6);
+}
+
+function respond(msg) {
+    const m = msg.toLowerCase();
+    if (/^(hi|hello|hey|hai|halo|yo|sup)/i.test(m))
+        return `👋 Hello! Welcome to ${CLINIC.name}.\n\nI'm your AI dental assistant. How can I help?\n\n1️⃣ Book an appointment\n2️⃣ Services & pricing\n3️⃣ Hours & location\n4️⃣ Talk to our team\n\nJust type a number or ask anything! 😊`;
+    if (/book|appointment|schedule|slot|available|^1$/i.test(m))
+        return `📅 Let's book your appointment!\n\nNext available slots:\n${getSlots().map(s => `  • ${s}`).join('\n')}\n\nWhich slot works? I'll also need:\n• Your full name\n• Contact number\n• Treatment needed`;
+    if (/service|price|cost|how much|treatment|^2$|berapa/i.test(m))
+        return `💰 Our services & pricing:\n\n${CLINIC.services.map(([s,p]) => `  • ${s}: ${p}`).join('\n')}\n\n*Prices vary by complexity. Consultation recommended.*\n\nWant to book a consultation? 😊`;
+    if (/hour|open|close|time|location|address|where|^3$|waktu|buka/i.test(m))
+        return `🏥 ${CLINIC.name}\n\n📍 ${CLINIC.address}\n🕐 ${CLINIC.hours}\n📞 ${CLINIC.phone}\n💬 WhatsApp: ${CLINIC.whatsapp}\n\nWould you like to book? 😊`;
+    if (/doctor|dentist|dr|doktor/i.test(m))
+        return `👨‍⚕️ Our Dental Team:\n\n${CLINIC.dentists.map(d => `  • ${d}`).join('\n')}\n\nAll registered with the Malaysian Dental Council.\n\nBook with a specific dentist? 😊`;
+    if (/insurance|panel|claim/i.test(m))
+        return `🏦 We accept all major panels:\nAIA, Prudential, Great Eastern, Allianz\n\n💳 Payment: Cash, cards, e-wallets (TnG, GrabPay), online banking\n\nNeed help with a claim? Our front desk can assist!`;
+    if (/parking|park|car/i.test(m))
+        return `🚗 Free parking at basement level. Take ticket at entrance.`;
+    if (/emergency|urgent|pain|sakit/i.test(m))
+        return `🚨 For dental emergencies, call ${CLINIC.whatsapp} immediately!\n\nWe handle:\n• Severe toothache\n• Broken/chipped tooth\n• Swelling or abscess\n• Bleeding gums\n\nWe'll prioritize your case.`;
+    if (/thank|thanks|terima kasih|tq/i.test(m))
+        return `😊 You're welcome! Anything else I can help with?\n\nHave a great day! 🦷✨`;
+    if (/human|staff|person|real|speak|^4$/i.test(m))
+        return `👤 Connecting you with our team!\n\n📞 Call: ${CLINIC.phone}\n💬 WhatsApp: ${CLINIC.whatsapp}\n\nOur staff responds within 5 minutes during business hours.`;
+    return `I can help with that! Here's what I do:\n\n1️⃣ Book an appointment\n2️⃣ Services & pricing\n3️⃣ Hours & location\n4️⃣ Talk to our team\n\nJust type a number or ask your question! 😊`;
+}
+
+function addMsg(text, cls) {
+    const chat = document.getElementById('chat');
+    const now = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+    const div = document.createElement('div');
+    div.className = `message ${cls}`;
+    div.innerHTML = text + `<div class="time">${now}</div>`;
+    chat.appendChild(div);
+    chat.scrollTop = chat.scrollHeight;
+}
+
+// Welcome message
+window.onload = () => addMsg(respond('hi'), 'bot');
+
+function sendMessage() {
+    const input = document.getElementById('userInput');
+    const msg = input.value.trim();
+    if (!msg) return;
+    addMsg(msg, 'user');
+    input.value = '';
+    const typing = document.createElement('div');
+    typing.className = 'typing';
+    typing.id = 'typing';
+    typing.textContent = 'typing...';
+    document.getElementById('chat').appendChild(typing);
+    setTimeout(() => {
+        typing.remove();
+        addMsg(respond(msg), 'bot');
+    }, 600 + Math.random() * 600);
+}
+    </script>
+</body>
+</html>
