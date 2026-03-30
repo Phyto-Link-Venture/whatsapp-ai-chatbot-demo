@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Restaurant AI Chatbot Demo — Phyto Link Venture</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0b141a; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        .container { width: 100%; max-width: 420px; height: 90vh; max-height: 700px; display: flex; flex-direction: column; border-radius: 12px; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.3); }
+        .header { background: #1f2c33; padding: 12px 16px; display: flex; align-items: center; gap: 12px; }
+        .header .avatar { width: 40px; height: 40px; border-radius: 50%; background: #ff6f00; display: flex; align-items: center; justify-content: center; font-size: 20px; color: white; }
+        .header .info h3 { color: #e9edef; font-size: 16px; }
+        .header .info p { color: #8696a0; font-size: 12px; }
+        .chat { flex: 1; overflow-y: auto; padding: 16px; background: #0b141a; }
+        .message { max-width: 85%; margin-bottom: 8px; padding: 8px 12px; border-radius: 8px; font-size: 14px; line-height: 1.5; white-space: pre-wrap; word-wrap: break-word; }
+        .bot { background: #1f2c33; color: #e9edef; border-top-left-radius: 0; margin-right: auto; }
+        .user { background: #005c4b; color: #e9edef; border-top-right-radius: 0; margin-left: auto; }
+        .time { font-size: 11px; color: #8696a0; text-align: right; margin-top: 4px; }
+        .input-area { background: #1f2c33; padding: 10px 16px; display: flex; gap: 8px; }
+        .input-area input { flex: 1; background: #2a3942; border: none; border-radius: 8px; padding: 10px 16px; color: #e9edef; font-size: 14px; outline: none; }
+        .input-area input::placeholder { color: #8696a0; }
+        .input-area button { background: #00a884; border: none; border-radius: 50%; width: 40px; height: 40px; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; color: white; }
+        .badge { background: #ff6f00; color: white; text-align: center; padding: 8px; font-size: 12px; }
+        .badge a { color: white; text-decoration: none; font-weight: bold; }
+        .cta-banner { background: linear-gradient(135deg, #ff6f00, #f44336); color: white; text-align: center; padding: 12px; font-size: 13px; }
+        .cta-banner a { color: #fff; font-weight: bold; text-decoration: underline; }
+        .demos { background: #1a1a2e; padding: 8px; text-align: center; font-size: 12px; }
+        .demos a { color: #8696a0; text-decoration: none; margin: 0 8px; }
+        .demos a:hover { color: #e9edef; }
+        .demos a.active { color: #ff6f00; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="cta-banner">
+            🍽️ Want this for YOUR restaurant? <a href="mailto:phytolinkventure@gmail.com?subject=Restaurant%20AI%20Chatbot%20Inquiry">Get Started — from RM199/month</a>
+        </div>
+        <div class="demos">
+            <a href="index.html">🦷 Dental</a> |
+            <a href="salon-demo.html">💇 Salon</a> |
+            <a href="restaurant-demo.html" class="active">🍽️ Restaurant</a>
+        </div>
+        <div class="header">
+            <div class="avatar">🍽️</div>
+            <div class="info">
+                <h3>Warung Selera KL</h3>
+                <p>🤖 AI Assistant • Order Anytime</p>
+            </div>
+        </div>
+        <div class="chat" id="chat"></div>
+        <div class="input-area">
+            <input type="text" id="userInput" placeholder="Type a message..." onkeypress="if(event.key==='Enter')sendMessage()">
+            <button onclick="sendMessage()">➤</button>
+        </div>
+        <div class="badge">⚡ Powered by <a href="mailto:phytolinkventure@gmail.com">Phyto Link Venture</a> — AI WhatsApp Automation</div>
+    </div>
+    <script>
+const R = {
+    name: "Warung Selera KL",
+    hours: "Daily: 11:00 AM - 10:00 PM\nFriday: 11:00 AM - 11:00 PM",
+    address: "15 Jalan Bangsar, 59000 KL",
+    phone: "03-2345 6789",
+    whatsapp: "019-222 3333",
+};
+
+const menu = {
+    mains: [
+        ["Nasi Lemak Special", "RM 12.90"],
+        ["Nasi Goreng Kampung", "RM 10.90"],
+        ["Mee Goreng Mamak", "RM 9.90"],
+        ["Char Kuey Teow", "RM 11.90"],
+        ["Roti Canai Set (2pcs + dhal)", "RM 5.90"],
+        ["Chicken Rice", "RM 10.90"],
+        ["Laksa Penang", "RM 11.90"],
+        ["Satay (10 sticks)", "RM 15.90"],
+    ],
+    drinks: [
+        ["Teh Tarik", "RM 3.50"],
+        ["Kopi O", "RM 3.00"],
+        ["Milo Dinosaur", "RM 5.90"],
+        ["Fresh Coconut", "RM 6.90"],
+        ["Sirap Bandung", "RM 4.50"],
+        ["Air Limau", "RM 3.50"],
+    ],
+    desserts: [
+        ["Cendol", "RM 5.90"],
+        ["ABC (Ais Batu Campur)", "RM 6.90"],
+        ["Roti Bakar", "RM 4.50"],
+    ]
+};
+
+function respond(msg) {
+    const m = msg.toLowerCase();
+    if (/^(hi|hello|hey|hai|halo|yo|sup)/i.test(m))
+        return `🍽️ Welcome to ${R.name}! Authentic Malaysian flavors!\n\nHow can I help?\n\n1️⃣ See our menu\n2️⃣ Place an order (delivery/pickup)\n3️⃣ Reserve a table\n4️⃣ Hours & location\n5️⃣ Catering inquiry\n6️⃣ Talk to our team\n\nType a number or just ask! 😋`;
+    if (/menu|food|eat|makan|what.*have|^1$/i.test(m))
+        return `📋 OUR MENU\n\n🍛 *Mains:*\n${menu.mains.map(([i,p]) => `  • ${i} — ${p}`).join('\n')}\n\n🥤 *Drinks:*\n${menu.drinks.map(([i,p]) => `  • ${i} — ${p}`).join('\n')}\n\n🍨 *Desserts:*\n${menu.desserts.map(([i,p]) => `  • ${i} — ${p}`).join('\n')}\n\n🏷️ *Today's Special:* Nasi Lemak + Teh Tarik = RM 14.90 (save RM1.50!)\n\nReady to order? 😋`;
+    if (/order|delivery|pickup|takeaway|bungkus|^2$/i.test(m))
+        return `📦 Let's get your order sorted!\n\n🚗 *Delivery:* Within 5km, RM5 flat fee\n🏪 *Self-pickup:* Ready in 15-20 min\n\nJust tell me:\n1. What you'd like to order\n2. Delivery or pickup?\n3. Your address (if delivery)\n\nMin order for delivery: RM25`;
+    if (/reserve|table|book|seat|^3$/i.test(m))
+        return `🪑 Table Reservation!\n\nPlease share:\n• Date & time\n• Number of guests\n• Any special requests (birthday, kids seat, etc.)\n\nWe have:\n  • Indoor AC seating (40 pax)\n  • Outdoor garden area (20 pax)\n  • Private room (up to 15 pax, min spend RM300)\n\nWeekend dinner (Fri-Sun 7-9PM) — book early! 🔥`;
+    if (/hour|open|close|location|address|where|^4$/i.test(m))
+        return `📍 ${R.name}\n\n${R.address}\n🕐 ${R.hours}\n📞 ${R.phone}\n💬 WhatsApp: ${R.whatsapp}\n\n🅿️ Parking at Bangsar Village (5 min walk)\n🚇 LRT Bangsar station (3 min walk)\n\nSee you soon! 😋`;
+    if (/catering|event|party|corporate|^5$/i.test(m))
+        return `🎉 Catering & Events!\n\nWe cater for:\n  • Corporate lunches (min 20 pax)\n  • Birthday parties\n  • Kenduri / gatherings\n  • Office events\n\n📋 Packages from RM15/pax\n\nTell me:\n• Event date\n• Number of guests\n• Budget range\n• Any dietary needs\n\nWe'll prepare a custom quote within 24 hours!`;
+    if (/human|staff|person|^6$/i.test(m))
+        return `📞 Call: ${R.phone}\n💬 WhatsApp: ${R.whatsapp}\n\nOur team responds within 5 minutes during business hours!`;
+    if (/halal|pork|alcohol/i.test(m))
+        return `☪️ Yes! We are 100% HALAL certified by JAKIM.\n\nNo pork, no alcohol. All ingredients halal-sourced.\n\nJAKIM cert no: displayed at our entrance 🙏`;
+    if (/vegetarian|vegan|diet/i.test(m))
+        return `🥬 Vegetarian options:\n  • Roti Canai (plain/egg)\n  • Mee Goreng (can make without meat)\n  • Fresh coconut\n  • Cendol\n\nJust let us know when ordering — we'll customize! 😊`;
+    if (/nasi lemak|best seller|popular|recommend/i.test(m))
+        return `⭐ Our MUST-TRY:\n\n1. 🏆 Nasi Lemak Special — RM12.90\n   Sambal tumis, ayam goreng berempah, telur, ikan bilis, timun, kacang\n\n2. 🔥 Satay (10 sticks) — RM15.90\n   Charcoal-grilled, served with kuah kacang & nasi impit\n\n3. 🍜 Laksa Penang — RM11.90\n   Authentic recipe, fresh ingredients daily\n\n4.9⭐ on Google Reviews (500+ reviews)\n\nWant to order? 😋`;
+    if (/thank|thanks|terima kasih|tq/i.test(m))
+        return `🙏 Terima kasih! Hope to see you soon!\n\nDon't forget: Nasi Lemak + Teh Tarik combo only RM14.90! 😋`;
+    return `Here's what I can help with:\n\n1️⃣ See our menu\n2️⃣ Place an order\n3️⃣ Reserve a table\n4️⃣ Hours & location\n5️⃣ Catering inquiry\n6️⃣ Talk to our team\n\nJust type a number or ask! 😋`;
+}
+
+function addMsg(text, cls) {
+    const chat = document.getElementById('chat');
+    const now = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+    const div = document.createElement('div');
+    div.className = `message ${cls}`;
+    div.innerHTML = text + `<div class="time">${now}</div>`;
+    chat.appendChild(div);
+    chat.scrollTop = chat.scrollHeight;
+}
+
+window.onload = () => addMsg(respond('hi'), 'bot');
+
+function sendMessage() {
+    const input = document.getElementById('userInput');
+    const msg = input.value.trim();
+    if (!msg) return;
+    addMsg(msg, 'user');
+    input.value = '';
+    const typing = document.createElement('div');
+    typing.className = 'typing';
+    typing.textContent = 'typing...';
+    document.getElementById('chat').appendChild(typing);
+    setTimeout(() => { typing.remove(); addMsg(respond(msg), 'bot'); }, 500 + Math.random() * 700);
+}
+    </script>
+</body>
+</html>
